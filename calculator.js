@@ -69,4 +69,3 @@ function operate(operator, a, b) {
 //     console.error(error.message);
 // }
 // #endregion
-
