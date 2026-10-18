@@ -16,7 +16,7 @@ function multiply(a, b) {
 function divide(a, b) {
 
     if (b === 0) {
-        alert("You can't divide by 0!");
+        alert("ERROR: You can't divide by 0!");
     }
     return a / b;
 }
@@ -69,3 +69,155 @@ function operate(operator, a, b) {
 //     console.error(error.message);
 // }
 // #endregion
+
+// select each button and assign it to a variable
+
+// control buttons selectors:
+const btnClear = document.getElementById('btn-clear');
+const btnBackspace = document.getElementById('btn-backspace');
+
+// digits buttons selectors:
+const digitButtons = document.querySelectorAll('.digit');
+
+// operators buttons selectors:
+let operatorButtons = document.querySelectorAll('.operator')
+
+const btnAdd = document.getElementById('btn-add');
+const btnSubtract = document.getElementById('btn-subtract');
+const btnMultiply = document.getElementById('btn-multiply');
+const btnDivide = document.getElementById('btn-divide');
+
+// other buttons selectors:
+const btnDot = document.getElementById('btn-dot');
+const btnEquals = document.getElementById('btn-equals');
+
+// screen selectors:
+const screenCurrent = document.querySelector('.screen-current');
+const screenLast = document.querySelector('.screen-last');
+
+// state variables:
+let currentInput = '';
+let lastInput = '';
+let operator = '';
+let waitingForSecond = false;
+
+// clear the screen
+btnClear.addEventListener("click", () => {
+    // reset state variables
+    currentInput = '0';
+    lastInput = '';
+    operator = '';
+    waitingForSecond = false;
+
+    // reset the screen
+    screenCurrent.textContent = '0';
+    screenLast.textContent = '';
+});
+
+// remove (undo) the last input 
+btnBackspace.addEventListener("click", () => {
+    // if the user pressed an operator 
+    if (waitingForSecond) return;
+
+    // remove the last character from currentInput
+    currentInput = currentInput.slice(0, -1);
+
+    // if it is empty make it 0
+    if (currentInput === '') {
+        currentInput = '0';
+    }
+
+    // update the screen
+    screenCurrent.textContent = currentInput;
+});
+
+// digit buttons event listeners
+digitButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        const number = button.textContent;
+
+        // if the user pressed an operator (waiting for the second number)
+        if (waitingForSecond) {
+            currentInput = number;
+            waitingForSecond = false;
+        }
+        else { // the user is still entering the first number
+            if (currentInput === '0') {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+        }
+        // update the screen
+        screenCurrent.textContent = currentInput;
+    });
+});
+
+// operator buttons event listeners
+operatorButtons.forEach(button => {
+    button.addEventListener("click", () => {
+
+        // if lastInput, operator, and currentInput have values, perform the operation and update the screen
+        if (lastInput !== '' && operator !== '' && currentInput !== '') {
+            const result = operate(operator, parseFloat(lastInput), parseFloat(currentInput));
+            currentInput = result.toString();
+            screenCurrent.textContent = currentInput;
+        }
+
+        // check if the user has entered a number before pressing the operator
+        if (currentInput === '') return; // do nothing if current input is empty
+        if (waitingForSecond) return; // do nothing if waiting for the second number
+
+        // save the current input into first first number
+        lastInput = currentInput;
+
+        // set the right operator value
+        if (button.id === 'btn-multiply') {
+            operator = '*';
+        } else if (button.id === 'btn-divide') {
+            operator = '/';
+        } else {
+            operator = button.textContent;
+        }
+
+        waitingForSecond = true;
+
+        // update the screen
+        screenLast.textContent = `${lastInput} ${button.textContent}`;
+    });
+});
+
+// equals button event listener
+btnEquals.addEventListener("click", () => {
+    // check if the user has entered a number before pressing the equals button
+    if (currentInput === '' || lastInput === '' || operator === '') return; // do nothing if any input is empty
+
+    // perform the operation
+    const result = operate(operator, parseFloat(lastInput), parseFloat(currentInput));
+
+    // update the screen
+    screenCurrent.textContent = result.toFixed(4);
+
+    // make sure to handle division by zero case
+    if (operator === '/' && parseFloat(currentInput) === 0) {
+        screenLast.textContent = `${lastInput} ${operator} ${currentInput} = ERROR`;
+        return;
+    } else {
+        // fix the operator symbol for display purposes
+        if (operator === '/') {
+            operator = '÷';
+        }
+        if (operator === '*') {
+            operator = '×';
+        }
+
+        screenLast.textContent = `${lastInput} ${operator} ${currentInput} =`;
+    }
+
+    // reset state variables for next operation
+    currentInput = result;
+    lastInput = '';
+    operator = '';
+    waitingForSecond = false;
+});
+
